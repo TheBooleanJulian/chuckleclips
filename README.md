@@ -99,13 +99,12 @@ API documentation.
 
 ## Getting Credentials
 
-### YouTube API
+### 1. YouTube — `YOUTUBE_API_KEY`, `YOUTUBE_CHANNEL_ID`
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new project
-3. Enable "YouTube Data API v3"
-4. Create an **API Key** under Credentials
-5. Go to YouTube channel settings, copy your **Channel ID**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/), create a project (any name).
+2. **APIs & Services → Library** → search "YouTube Data API v3" → Enable.
+3. **APIs & Services → Credentials** → Create Credentials → API key. Restrict it to "YouTube Data API v3" only.
+4. Channel ID: go to your channel → **Settings → Advanced settings** in YouTube Studio, or open your channel page and copy the ID from the URL if it's a `/channel/UC...` link.
 
 **Add to `.env`:**
 ```
@@ -113,30 +112,18 @@ YOUTUBE_API_KEY=AIza...
 YOUTUBE_CHANNEL_ID=UCa...
 ```
 
-### Instagram Graph API
+### 2. Meta app setup (shared by Instagram + Facebook)
 
-1. Go to [Meta Developers](https://developers.facebook.com)
-2. Create a new app (type: Business)
-3. Add "Instagram Graph API" product
-4. Get your **Instagram Business Account ID**:
-   - Business Suite → Settings → Business Accounts
-   - Or via API: `/me/accounts` on your Facebook page
-5. Generate **Long-Lived Access Token**:
-   - Settings → Basic → Get New Access Token
-   - Or use Graph API Explorer
+1. Go to [developers.facebook.com](https://developers.facebook.com/) → **My Apps → Create App** → type "Other" → "Business".
+2. In the app, add the **Facebook Login** and **Instagram Graph API** products.
+3. Make sure your personal Meta account is an **admin** on both the Chuckleclips Facebook Page and the Instagram account, and that the Instagram account is a **Business or Creator account linked to that Facebook Page** (Instagram app → Settings → Account → Switch to Professional, then link the Page).
 
-**Add to `.env`:**
-```
-INSTAGRAM_BUSINESS_ACCOUNT_ID=123456...
-INSTAGRAM_ACCESS_TOKEN=EAA...
-```
+### 3. Facebook — `FACEBOOK_PAGE_ID`, `FACEBOOK_ACCESS_TOKEN`
 
-### Facebook Graph API
-
-1. Use the same app from Instagram (Meta owns both)
-2. Get your **Facebook Page ID**:
-   - Page → Settings → Basic → Page ID
-3. Use the same access token from Instagram
+1. In the Meta app, go to **Tools → Graph API Explorer**.
+2. Select your app, click "Get Token → Get User Access Token", grant `pages_show_list` and `pages_read_engagement`.
+3. Run `GET /me/accounts` — the response lists your Page with its `id` (that's `FACEBOOK_PAGE_ID`) and a **Page Access Token**.
+4. That Page token from `/me/accounts` is already long-lived (doesn't expire on its own as long as you don't revoke it) — use it directly as `FACEBOOK_ACCESS_TOKEN`.
 
 **Add to `.env`:**
 ```
@@ -144,18 +131,37 @@ FACEBOOK_PAGE_ID=123456...
 FACEBOOK_ACCESS_TOKEN=EAA...
 ```
 
-### TikTok API
+### 4. Instagram — `INSTAGRAM_BUSINESS_ACCOUNT_ID`, `INSTAGRAM_ACCESS_TOKEN`
+
+1. Still in Graph API Explorer with the same Page Access Token, run:
+   `GET /{page-id}?fields=instagram_business_account`
+2. The returned id is `INSTAGRAM_BUSINESS_ACCOUNT_ID`.
+3. Reuse the same Page Access Token as `INSTAGRAM_ACCESS_TOKEN` — it works for both since Instagram Graph API calls ride on the Page token.
+
+**Add to `.env`:**
+```
+INSTAGRAM_BUSINESS_ACCOUNT_ID=123456...
+INSTAGRAM_ACCESS_TOKEN=EAA...
+```
+
+> Since you're an admin/tester on your own Page and IG account, this works immediately at "Standard Access" without needing Meta's App Review — that's only required if you want other people's accounts to grant your app access.
+
+### 5. TikTok API
 
 ⚠️ **Note:** TikTok API access is limited and requires approval.
 
 - Apply at [TikTok Developer Portal](https://developers.tiktok.com)
 - Approval can take weeks
-- For now, this is a placeholder in the code
+- For now, this is a placeholder in the code (`fetchTikTokVideos` in `server.js` returns an empty list)
 
 **Add to `.env` (when you get access):**
 ```
 TIKTOK_USERNAME=@chuckleclips_official
 ```
+
+### 6. Add to Zeabur
+
+Dashboard → your service → **Settings → Environment** → add each var name exactly as in `.env.example` with the real values, Save. Zeabur auto-redeploys.
 
 ## How Deduplication Works
 
