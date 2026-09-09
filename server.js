@@ -3,11 +3,14 @@ import cors from 'cors';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import NodeCache from 'node-cache';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Cache: store results for 30 minutes
 const cache = new NodeCache({ stdTTL: 1800 });
@@ -15,6 +18,7 @@ const cache = new NodeCache({ stdTTL: 1800 });
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Helper: Fetch YouTube videos
 async function fetchYouTubeVideos() {
@@ -222,19 +226,6 @@ app.get('/api/feed', async (req, res) => {
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Root endpoint
-app.get('/', (req, res) => {
-  res.json({
-    name: 'Chuckleclips Backend',
-    version: '1.0.0',
-    endpoints: {
-      feed: '/api/feed',
-      health: '/health'
-    },
-    docs: 'https://github.com/chuckleclips/backend'
-  });
 });
 
 // Start server
