@@ -718,13 +718,19 @@
             color: var(--white);
         }
 
+        .social-btn:hover .icon {
+            filter: invert(1);
+        }
+
         .social-btn:active {
             transform: translate(1px, 1px);
             box-shadow: 1px 1px 0 var(--dark);
         }
 
         .social-btn .icon {
-            font-size: 1.3rem;
+            width: 1.3rem;
+            height: 1.3rem;
+            display: block;
         }
 
         .follow-note {
@@ -1214,19 +1220,19 @@
             
             <div class="social-grid reveal">
                 <a href="https://www.instagram.com/chuckleclips_official/" target="_blank" rel="noopener" class="social-btn">
-                    <span class="icon">📸</span>
+                    <img class="icon" src="assets/icons/Instagram.png" alt="">
                     <span>Instagram</span>
                 </a>
                 <a href="https://www.tiktok.com/@chuckleclips_official" target="_blank" rel="noopener" class="social-btn">
-                    <span class="icon">🎵</span>
+                    <img class="icon" src="assets/icons/Tiktok.png" alt="">
                     <span>TikTok</span>
                 </a>
                 <a href="https://www.youtube.com/@Chuckleclips_official" target="_blank" rel="noopener" class="social-btn">
-                    <span class="icon">📺</span>
+                    <img class="icon" src="assets/icons/Youtube.png" alt="">
                     <span>YouTube</span>
                 </a>
                 <a href="https://www.facebook.com/profile.php?id=61575355809969" target="_blank" rel="noopener" class="social-btn">
-                    <span class="icon">👍</span>
+                    <img class="icon" src="assets/icons/Facebook.png" alt="">
                     <span>Facebook</span>
                 </a>
             </div>
