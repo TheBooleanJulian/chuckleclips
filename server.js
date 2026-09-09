@@ -144,6 +144,83 @@ async function fetchFacebookPosts() {
   }
 }
 
+// Helper: Fetch YouTube subscriber count
+async function fetchYouTubeStats() {
+  try {
+    if (!process.env.YOUTUBE_API_KEY || !process.env.YOUTUBE_CHANNEL_ID) {
+      console.warn('YouTube credentials missing');
+      return null;
+    }
+
+    const response = await axios.get(
+      'https://www.googleapis.com/youtube/v3/channels',
+      {
+        params: {
+          key: process.env.YOUTUBE_API_KEY,
+          id: process.env.YOUTUBE_CHANNEL_ID,
+          part: 'statistics'
+        }
+      }
+    );
+
+    const stats = response.data.items?.[0]?.statistics;
+    return stats ? Number(stats.subscriberCount) : null;
+  } catch (error) {
+    console.error('YouTube stats error:', error.message);
+    return null;
+  }
+}
+
+// Helper: Fetch Instagram follower count
+async function fetchInstagramStats() {
+  try {
+    if (!process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || !process.env.INSTAGRAM_ACCESS_TOKEN) {
+      console.warn('Instagram credentials missing');
+      return null;
+    }
+
+    const response = await axios.get(
+      `https://graph.facebook.com/v18.0/${process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID}`,
+      {
+        params: {
+          fields: 'followers_count',
+          access_token: process.env.INSTAGRAM_ACCESS_TOKEN
+        }
+      }
+    );
+
+    return response.data.followers_count ?? null;
+  } catch (error) {
+    console.error('Instagram stats error:', error.message);
+    return null;
+  }
+}
+
+// Helper: Fetch Facebook follower count
+async function fetchFacebookStats() {
+  try {
+    if (!process.env.FACEBOOK_PAGE_ID || !process.env.FACEBOOK_ACCESS_TOKEN) {
+      console.warn('Facebook credentials missing');
+      return null;
+    }
+
+    const response = await axios.get(
+      `https://graph.facebook.com/v18.0/${process.env.FACEBOOK_PAGE_ID}`,
+      {
+        params: {
+          fields: 'followers_count',
+          access_token: process.env.FACEBOOK_ACCESS_TOKEN
+        }
+      }
+    );
+
+    return response.data.followers_count ?? null;
+  } catch (error) {
+    console.error('Facebook stats error:', error.message);
+    return null;
+  }
+}
+
 // Helper: Deduplicate content by matching title/description similarity and date proximity
 function deduplicateContent(allPosts) {
   const dedupMap = new Map();
@@ -223,6 +300,44 @@ app.get('/api/feed', async (req, res) => {
   }
 });
 
+// Stats endpoint: Get follower/subscriber counts per platform
+app.get('/api/stats', async (req, res) => {
+  try {
+    const cached = cache.get('chuckleclips_stats');
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const [youtube, instagram, facebook] = await Promise.all([
+      fetchYouTubeStats(),
+      fetchInstagramStats(),
+      fetchFacebookStats()
+    ]);
+
+    const response = {
+      success: true,
+      lastUpdated: new Date().toISOString(),
+      data: {
+        youtube,
+        instagram,
+        facebook,
+        tiktok: null
+      }
+    };
+
+    cache.set('chuckleclips_stats', response);
+
+    res.json(response);
+  } catch (error) {
+    console.error('Stats error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch stats',
+      message: error.message
+    });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -233,4 +348,5 @@ app.listen(PORT, () => {
   console.log(`🎬 Chuckleclips backend running on port ${PORT}`);
   console.log(`📍 Health check: http://localhost:${PORT}/health`);
   console.log(`📺 Feed endpoint: http://localhost:${PORT}/api/feed`);
+  console.log(`📊 Stats endpoint: http://localhost:${PORT}/api/stats`);
 });

@@ -692,6 +692,25 @@
             margin-bottom: 2rem;
         }
 
+        .social-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .social-stat {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-light);
+            min-height: 1.2em;
+        }
+
+        .social-stat:empty {
+            display: none;
+        }
+
         .social-btn {
             display: inline-flex;
             align-items: center;
@@ -1100,22 +1119,34 @@
             </div>
 
             <div class="social-grid reveal">
-                <a href="https://www.instagram.com/chuckleclips_official/" target="_blank" rel="noopener" class="social-btn">
-                    <img class="icon" src="assets/icons/Instagram.png" alt="">
-                    <span>Instagram</span>
-                </a>
-                <a href="https://www.tiktok.com/@chuckleclips_official" target="_blank" rel="noopener" class="social-btn">
-                    <img class="icon" src="assets/icons/Tiktok.png" alt="">
-                    <span>TikTok</span>
-                </a>
-                <a href="https://www.youtube.com/@Chuckleclips_official" target="_blank" rel="noopener" class="social-btn">
-                    <img class="icon" src="assets/icons/Youtube.png" alt="">
-                    <span>YouTube</span>
-                </a>
-                <a href="https://www.facebook.com/profile.php?id=61575355809969" target="_blank" rel="noopener" class="social-btn">
-                    <img class="icon" src="assets/icons/Facebook.png" alt="">
-                    <span>Facebook</span>
-                </a>
+                <div class="social-item">
+                    <a href="https://www.instagram.com/chuckleclips_official/" target="_blank" rel="noopener" class="social-btn">
+                        <img class="icon" src="assets/icons/Instagram.png" alt="">
+                        <span>Instagram</span>
+                    </a>
+                    <span class="social-stat" data-platform="instagram"></span>
+                </div>
+                <div class="social-item">
+                    <a href="https://www.tiktok.com/@chuckleclips_official" target="_blank" rel="noopener" class="social-btn">
+                        <img class="icon" src="assets/icons/Tiktok.png" alt="">
+                        <span>TikTok</span>
+                    </a>
+                    <span class="social-stat" data-platform="tiktok"></span>
+                </div>
+                <div class="social-item">
+                    <a href="https://www.youtube.com/@Chuckleclips_official" target="_blank" rel="noopener" class="social-btn">
+                        <img class="icon" src="assets/icons/Youtube.png" alt="">
+                        <span>YouTube</span>
+                    </a>
+                    <span class="social-stat" data-platform="youtube"></span>
+                </div>
+                <div class="social-item">
+                    <a href="https://www.facebook.com/profile.php?id=61575355809969" target="_blank" rel="noopener" class="social-btn">
+                        <img class="icon" src="assets/icons/Facebook.png" alt="">
+                        <span>Facebook</span>
+                    </a>
+                    <span class="social-stat" data-platform="facebook"></span>
+                </div>
             </div>
 
             <p class="follow-note reveal">Follow us on @chuckleclips_official!</p>
@@ -1391,6 +1422,32 @@
         document.querySelectorAll('.video-card').forEach((card, index) => {
             card.style.transitionDelay = `${index * 0.1}s`;
         });
+
+        // Load follower/subscriber counts for the Follow section
+        function formatFollowerCount(count) {
+            if (count >= 1000000) return (count / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (count >= 1000) return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+            return String(count);
+        }
+
+        async function loadSocialStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const { success, data } = await response.json();
+                if (!success) return;
+
+                document.querySelectorAll('.social-stat').forEach(el => {
+                    const count = data[el.dataset.platform];
+                    if (typeof count === 'number') {
+                        el.textContent = `${formatFollowerCount(count)} followers`;
+                    }
+                });
+            } catch (error) {
+                console.error('Stats load failed:', error);
+            }
+        }
+
+        loadSocialStats();
     </script>
 </body>
 </html>
