@@ -241,6 +241,19 @@ const response = await fetch('https://your-zeabur-url.com/api/feed');
 const { data } = await response.json();
 ```
 
+## Future Features
+
+### Follower count stats
+
+Show follower/subscriber counts under each social button in the Follow section.
+
+- **YouTube**: `channels.list?part=statistics` returns `subscriberCount` directly with just the API key.
+- **Facebook**: `/{page-id}?fields=followers_count` with the Page access token.
+- **Instagram**: `/{ig-business-id}?fields=followers_count` with the same Page access token.
+- **TikTok**: no viable API without developer approval (same gap as the video feed) — would need a manually-updated static number or to wait for API access.
+
+Plan: add a `GET /api/stats` endpoint that fetches all three counts in parallel (cached like `/api/feed`), then have the Follow section fetch it and render a count under each platform button.
+
 ## License
 
 MIT
