@@ -1,6 +1,6 @@
 {
   "name": "chuckleclips-backend",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Chuckleclips unified social media feed backend",
   "main": "server.js",
   "type": "module",

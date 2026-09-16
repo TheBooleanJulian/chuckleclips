@@ -1,14 +1,79 @@
-# Chuckleclips Backend
+<p align="center">
+  <img src="public/assets/cast-card/banner.jpg" alt="The Chuckleclips cast" width="100%">
+</p>
 
-Unified social media feed aggregator for Chuckleclips. Fetches latest videos from Instagram, TikTok, YouTube, and Facebook, deduplicates content, and serves a single unified feed.
+<h1 align="center">Chuckleclips Backend</h1>
+
+<p align="center">
+  Unified social media feed aggregator + website for <strong>Chuckleclips</strong>, a Singaporean comedy skit channel.<br>
+  Fetches the latest videos/posts from Instagram, TikTok, YouTube, and Facebook, deduplicates cross-posted content, and serves it (plus follower counts) through a single REST API — alongside the marketing site itself.
+</p>
+
+<p align="center">
+  <img alt="version" src="https://img.shields.io/badge/version-1.2.0-blue">
+  <img alt="node" src="https://img.shields.io/badge/node-%3E%3D20-green">
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-lightgrey">
+</p>
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [API Reference](#api-reference)
+- [Getting Credentials](#getting-credentials)
+- [How Deduplication Works](#how-deduplication-works)
+- [Caching](#caching)
+- [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
+- [Changelog](#changelog)
+- [License](#license)
 
 ## Features
 
-- ✅ Fetches from 4 social platforms simultaneously
-- ✅ Deduplicates identical content posted across platforms
-- ✅ 30-minute caching to avoid rate limits
-- ✅ Simple REST API (`/api/feed`)
-- ✅ Production-ready with Docker & Zeabur support
+- 🎬 Fetches from 4 social platforms simultaneously (YouTube, Instagram, Facebook, TikTok*)
+- 🔁 Deduplicates identical content posted across platforms into one card with multi-platform links
+- 📊 Follower/subscriber count stats endpoint (`/api/stats`) for YouTube, Instagram, Facebook
+- ⚡ 30-minute in-memory caching to stay under API rate limits
+- 🌐 Serves the full Chuckleclips marketing website (`/public`) directly from the backend
+- 🔌 Simple REST API (`/api/feed`, `/api/stats`, `/health`)
+- 🐳 Production-ready with Docker & one-click Zeabur deployment
+
+\* TikTok has no public API without developer approval — it's wired up and ready, but returns an empty list until access is granted (see [Roadmap](#roadmap)).
+
+## Screenshots
+
+<p align="center">
+  <img src="public/assets/cast-card/banner.jpg" alt="Hero section with cast banner" width="49%">
+  <img src="public/assets/cast-card/cast-auntie-li.jpg" alt="Meet the Cast poster card" width="24%">
+  <img src="public/assets/cast-card/cast-lao-wang.jpg" alt="Meet the Cast poster card" width="24%">
+</p>
+
+<p align="center"><em>Hero section (left) and two of the "Meet the Cast" poster cards, served from <code>public/index.html</code>.</em></p>
+
+## Architecture
+
+```
+Browser
+  │
+  ▼
+Express server (server.js)
+  ├── static: public/  (the Chuckleclips website — HTML/CSS/JS + assets)
+  ├── GET /api/feed   → fetch YouTube + Instagram + Facebook + TikTok in parallel
+  │                       → deduplicate by title + date → cache 30 min → JSON
+  ├── GET /api/stats  → fetch follower/subscriber counts per platform → cache 30 min
+  └── GET /health     → uptime check
+```
+
+- **Runtime:** Node.js (ESM), Express
+- **HTTP client:** axios
+- **Cache:** `node-cache` (in-memory, 30-min TTL, no external DB required)
+- **Frontend:** static HTML/CSS/vanilla JS in [`public/`](public), fetching the backend's own `/api/feed` and `/api/stats`
+- **Deploy target:** Zeabur (via [`zeabur.json`](zeabur.json) + [`Dockerfile`](Dockerfile))
 
 ## Quick Start
 
@@ -22,13 +87,11 @@ npm install
 
 ### 2. Set Environment Variables
 
-Copy `.env.example` to `.env`:
-
 ```bash
 cp .env.example .env
 ```
 
-Then fill in your credentials (see [Credentials Guide](#getting-credentials) below).
+Then fill in your credentials — see [Getting Credentials](#getting-credentials) below.
 
 ### 3. Run Locally
 
@@ -36,50 +99,37 @@ Then fill in your credentials (see [Credentials Guide](#getting-credentials) bel
 npm run dev
 ```
 
-Server runs on `http://localhost:3000`
+Server runs on `http://localhost:3000` and serves the website at the same address.
 
-Test the feed:
 ```bash
 curl http://localhost:3000/api/feed
+curl http://localhost:3000/api/stats
+curl http://localhost:3000/health
 ```
 
-### 4. Deploy to Zeabur
+### 4. Deploy
 
-#### Option A: Connect GitHub (Recommended)
+See [Deployment](#deployment) below, or the full walkthrough in [DEPLOYMENT.md](DEPLOYMENT.md).
 
-1. Push this repo to GitHub
-2. Go to [Zeabur Dashboard](https://dashboard.zeabur.com)
-3. Click "New Service" → "GitHub"
-4. Select this repository
-5. Add environment variables in Zeabur dashboard (copy from your `.env`)
-6. Deploy!
+## API Reference
 
-#### Option B: Zeabur CLI
+### `GET /api/feed`
 
-```bash
-npm install -g zeabur
-zeabur deploy
-```
-
-## API Endpoints
-
-### GET `/api/feed`
-
-Returns unified, deduplicated feed from all platforms.
+Returns the unified, deduplicated feed from all platforms (top 12).
 
 **Response:**
 ```json
 {
   "success": true,
   "count": 8,
-  "lastUpdated": "2024-01-15T10:30:00Z",
+  "lastUpdated": "2026-01-15T10:30:00Z",
   "data": [
     {
       "id": "youtube_abc123",
       "title": "Auntie vs Gen Z",
       "description": "...",
       "thumbnail": "https://...",
-      "publishedAt": "2024-01-15T09:00:00Z",
+      "publishedAt": "2026-01-15T09:00:00Z",
       "platform": "YouTube",
       "platforms": ["YouTube", "Instagram", "TikTok"],
       "url": "https://youtube.com/watch?v=...",
@@ -89,13 +139,34 @@ Returns unified, deduplicated feed from all platforms.
 }
 ```
 
-### GET `/health`
+Query params:
+- `force=true` — bypass the 30-minute cache (useful during development)
 
-Health check endpoint.
+### `GET /api/stats`
 
-### GET `/`
+Returns follower/subscriber counts per platform.
 
-API documentation.
+**Response:**
+```json
+{
+  "success": true,
+  "lastUpdated": "2026-01-15T10:30:00Z",
+  "data": {
+    "youtube": 1234,
+    "instagram": 5678,
+    "facebook": 910,
+    "tiktok": null
+  }
+}
+```
+
+### `GET /health`
+
+Health check — `{ "status": "ok", "timestamp": "..." }`.
+
+### `GET /`
+
+Serves the Chuckleclips website ([`public/index.html`](public/index.html)).
 
 ## Getting Credentials
 
@@ -169,8 +240,8 @@ When the same video is posted to multiple platforms on the same day:
 
 1. Posts are grouped by title + date
 2. First occurrence is kept as the primary entry
-3. Additional platforms are added to `platforms` array
-4. Frontend can link to any platform
+3. Additional platforms are added to the `platforms` array
+4. The frontend can link to any platform
 
 **Example:** If "Auntie Final Boss" is posted to Instagram, TikTok, and YouTube on Jan 15:
 
@@ -187,36 +258,39 @@ The website shows it **once** with links to all three platforms.
 
 ## Caching
 
-- Results cached for **30 minutes**
+- Results cached for **30 minutes** (`/api/feed` and `/api/stats` separately)
 - Cache clears automatically after TTL
-- Prevents hitting API rate limits
+- Prevents hitting platform API rate limits
+- Bypass during dev: `GET /api/feed?force=true`
 
-To bypass cache (during dev):
-```
-GET /api/feed?force=true
-```
+## Deployment
 
-## Monitoring
+### Option A: Connect GitHub (Recommended)
 
-Check logs in Zeabur dashboard for:
-- API errors
-- Missing credentials
-- Rate limit warnings
+1. Push this repo to GitHub
+2. Go to [Zeabur Dashboard](https://dashboard.zeabur.com)
+3. Click "New Service" → "GitHub"
+4. Select this repository
+5. Add environment variables in Zeabur dashboard (copy from your `.env`)
+6. Deploy!
 
-## Development
-
-### Testing Locally
+### Option B: Zeabur CLI
 
 ```bash
-# With mock data
-npm run dev
-
-# Test endpoints
-curl http://localhost:3000/health
-curl http://localhost:3000/api/feed
+npm install -g zeabur
+zeabur deploy
 ```
 
-### Troubleshooting
+### Option C: Docker
+
+```bash
+docker build -t chuckleclips-backend .
+docker run -p 3000:3000 --env-file .env chuckleclips-backend
+```
+
+Full step-by-step walkthrough (including troubleshooting a first deploy): [DEPLOYMENT.md](DEPLOYMENT.md).
+
+## Troubleshooting
 
 **"Credentials missing" warning:**
 - Make sure `.env` file exists with all variables
@@ -232,27 +306,49 @@ curl http://localhost:3000/api/feed
 - Check `npm install` completes without errors
 - Review deployment logs
 
-## Frontend Integration
+## Roadmap
 
-The website calls your backend:
+- [ ] **TikTok feed support** — once developer API access is granted, replace the `fetchTikTokVideos` placeholder with real fetches
+- [ ] **TikTok follower count** — no viable API without developer approval; fallback would be a manually-updated static number
+- [ ] **Re-enable "Fresh Drops" section** — currently hidden on the site until the live feed is wired into the frontend
+- [x] **Follower count stats** — `GET /api/stats` returns YouTube subscriber count, Facebook & Instagram follower counts (shipped in [1.2.0](#changelog))
 
-```javascript
-const response = await fetch('https://your-zeabur-url.com/api/feed');
-const { data } = await response.json();
-```
+## Changelog
 
-## Future Features
+This project follows [Semantic Versioning](https://semver.org/).
 
-### Follower count stats
+### [1.2.0] - 2026-09-09
 
-Show follower/subscriber counts under each social button in the Follow section.
+**Added**
+- Cast banner as the site's hero photo
+- Follower/subscriber count stats in the Follow section, backed by a new `GET /api/stats` endpoint
 
-- **YouTube**: `channels.list?part=statistics` returns `subscriberCount` directly with just the API key.
-- **Facebook**: `/{page-id}?fields=followers_count` with the Page access token.
-- **Instagram**: `/{ig-business-id}?fields=followers_count` with the same Page access token.
-- **TikTok**: no viable API without developer approval (same gap as the video feed) — would need a manually-updated static number or to wait for API access.
+**Changed**
+- Compressed hero banner and cast card images for faster page loads
 
-Plan: add a `GET /api/stats` endpoint that fetches all three counts in parallel (cached like `/api/feed`), then have the Follow section fetch it and render a count under each platform button.
+### [1.1.0] - 2026-09-09
+
+**Added**
+- Backend now serves the full Chuckleclips website as static files (`public/`)
+- `package-lock.json` for reproducible `npm ci` builds
+- Documented follower-count stats as a planned feature
+
+**Changed**
+- Replaced "Meet the Cast" emoji placeholders with designed poster card images
+- Replaced social button emojis with platform icon images
+- Moved the Follow section above Fresh Drops
+- Updated footer credit line
+
+**Hidden**
+- "Fresh Drops" section, until the live feed is wired up on the frontend
+
+### [1.0.0] - 2026-09-04
+
+**Added**
+- Initial backend: unified feed aggregation across YouTube, Instagram, Facebook, and TikTok (placeholder)
+- Deduplication of cross-posted content
+- 30-minute response caching
+- Docker and Zeabur deployment configuration
 
 ## License
 
