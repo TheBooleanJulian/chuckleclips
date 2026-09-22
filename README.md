@@ -12,7 +12,7 @@
 <p align="center">
   <img alt="version" src="https://img.shields.io/badge/version-1.2.0-blue">
   <img alt="node" src="https://img.shields.io/badge/node-%3E%3D20-green">
-  <img alt="license" src="https://img.shields.io/badge/license-MIT-lightgrey">
+  <img alt="license" src="https://img.shields.io/badge/license-AGPLv3%20%2B%20Commercial-00D4C8">
 </p>
 
 ---
@@ -352,4 +352,13 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## License
 
-MIT
+This project is dual licensed.
+
+- Community Edition — [GNU Affero General Public License v3 (AGPLv3)](LICENSE). Free to use, modify, and self-host. If you distribute a modified version or run it as a network service, you must make the corresponding source available.
+- Commercial License — for organisations that want to embed, modify, or distribute this software without AGPLv3's obligations. See [COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md).
+
+---
+
+<div align="center">
+<sub>Built by <a href="https://github.com/TheBooleanJulian">@TheBooleanJulian</a></sub>
+</div>
