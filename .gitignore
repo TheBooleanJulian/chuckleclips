@@ -14,3 +14,6 @@ build/
 *.swp
 *.swo
 *~
+
+# Cloudflare Wrangler local state
+.wrangler/
